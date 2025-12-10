@@ -34,7 +34,8 @@
         // 4. MapLibre標準のPopupを作って地図に追加
         currentPopup = new maplibregl.Popup({ 
                 closeOnClick: false,
-                closeButton: false 
+                closeButton: false,
+                maxWidth: 'none'
             })
             .setLngLat([lng, lat])
             .setDOMContent(container) // 作ったDOMをセット

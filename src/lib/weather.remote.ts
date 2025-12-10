@@ -1,5 +1,6 @@
 import { query } from '$app/server';
 import * as v from 'valibot';
+import { HERE_API_KEY } from '$env/static/private';
 
 const CoordinatesSchema = v.object({
     lat: v.number(),
@@ -17,7 +18,8 @@ export const getWeather = query(
             throw new Error('Missing coordinates');
         }
 
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m`;
+        const apiKey = HERE_API_KEY;
+        const url = `https://weather.hereapi.com/v3/report?products=observation&location=${lat},${lng}&lang=ja-JP&apiKey=${apiKey}`;
 
         const res = await fetch(url);
 
@@ -26,11 +28,24 @@ export const getWeather = query(
         }
 
         const result = await res.json();
+        const mainLocation = result.places?.[0];
+        const observation = mainLocation?.observations?.[0];
+
+        if (!observation) {
+            throw new Error('No observation data found');
+        }
 
         return {
-            temp: result.current.temperature_2m,
-            wind: result.current.wind_speed_10m,
-            unit: result.current_units.temperature_2m
+            temp: observation.temperature,
+            description: observation.description, // e.g. "所々晴れ間が覗く、曇り. 涼しい."
+            skyDesc: observation.skyDesc,         // e.g. "所々晴れ間が覗く、曇り"
+            humidity: observation.humidity,
+            windSpeed: observation.windSpeed,
+            windDirection: observation.windDirection,
+            windDesc: observation.windDesc,       // e.g. "北"
+            iconLink: observation.iconLink,
+            city: observation.place?.address?.city || 'Unknown Location',
+            time: observation.time
         };
     }
 );
